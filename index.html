@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>AI 탐구 기록장 · @miraehistory</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2048%2048%22%3E%3Cdefs%3E%3ClinearGradient%20id=%22mhg%22%20x1=%220%22%20y1=%220%22%20x2=%221%22%20y2=%221%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%238B7BF0%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%235FCFB8%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width=%2248%22%20height=%2248%22%20rx=%2214%22%20fill=%22url(%23mhg)%22/%3E%3Cpath%20d=%22M16%2031.5%20L16%2041%20L25.5%2032.5%20Z%22%20fill=%22%23ffffff%22/%3E%3Crect%20x=%229%22%20y=%2211%22%20width=%2230%22%20height=%2222%22%20rx=%229%22%20fill=%22%23ffffff%22/%3E%3Cpath%20d=%22M24%2016%20C24.9%2021%2027%2023.1%2032%2024%20C27%2024.9%2024.9%2027%2024%2032%20C23.1%2027%2021%2024.9%2016%2024%20C21%2023.1%2023.1%2021%2024%2016%20Z%22%20fill=%22%237C6BE8%22/%3E%3C/svg%3E" />
 <style>
 /* ─────────── 폰트 ─────────── */
 @font-face{font-family:'Aggravo';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2108@1.1/SBAggroL.woff') format('woff');font-weight:300;font-display:swap}
@@ -46,12 +47,8 @@ button{cursor:pointer;border:none;background:none}
 
 /* ─────────── 헤더 ─────────── */
 .brandbar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.brandmark{
-  width:42px;height:42px;border-radius:14px;flex:none;
-  background:linear-gradient(135deg,var(--grape),var(--mint));
-  display:grid;place-items:center;font-size:20px;
-  box-shadow:var(--shadow);
-}
+.brandmark{width:44px;height:44px;flex:none;border-radius:15px;box-shadow:var(--shadow);overflow:hidden}
+.brandmark svg{display:block;width:100%;height:100%}
 .brandtext b{display:block;font-weight:700;font-size:17px;letter-spacing:-.02em}
 .brandtext span{display:block;font-size:12px;color:var(--ink-soft)}
 
@@ -725,6 +722,8 @@ function TeacherView() {
 }
 
 /* ═══════════ 앱 셸 ═══════════ */
+const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="AI 탐구 기록장 로고"><defs><linearGradient id="mhg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8B7BF0"/><stop offset="1" stop-color="#5FCFB8"/></linearGradient></defs><rect width="48" height="48" rx="14" fill="url(#mhg)"/><path d="M16 31.5 L16 41 L25.5 32.5 Z" fill="#ffffff"/><rect x="9" y="11" width="30" height="22" rx="9" fill="#ffffff"/><path d="M24 16 C24.9 21 27 23.1 32 24 C27 24.9 24.9 27 24 32 C23.1 27 21 24.9 16 24 C21 23.1 23.1 21 24 16 Z" fill="#7C6BE8"/></svg>`;
+
 const TABS = [{ id: "submit", label: "기록 제출" }, { id: "portfolio", label: "내 기록장" }, { id: "teacher", label: "선생님" }];
 
 function App() {
@@ -741,7 +740,7 @@ function App() {
   return (
     <div className="wrap">
       <div className="brandbar">
-        <div className="brandmark">🧭</div>
+        <div className="brandmark" dangerouslySetInnerHTML={{ __html: LOGO_SVG }} />
         <div className="brandtext">
           <b>AI 탐구 기록장</b>
           <span>물어보고 · 옮겨 적고 · 쌓아 두기</span>
@@ -766,9 +765,9 @@ function App() {
       )}
 
       <div className="footer">
-        <a className="sig" href="https://www.instagram.com/miraehistory" target="_blank" rel="noopener noreferrer">
+        <div className="sig">
           <span className="dot">✦</span><b>@miraehistory</b>
-        </a>
+        </div>
         <p>AI 탐구 기록장 · 수업용으로 자유롭게 쓰세요</p>
       </div>
     </div>
