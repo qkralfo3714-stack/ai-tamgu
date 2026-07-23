@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>AI 탐구 기록장 · @miraehistory</title>
+<style>
+/* ─────────── 폰트 ─────────── */
+@font-face{font-family:'Aggravo';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2108@1.1/SBAggroL.woff') format('woff');font-weight:300;font-display:swap}
+@font-face{font-family:'Aggravo';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2108@1.1/SBAggroM.woff') format('woff');font-weight:500;font-display:swap}
+@font-face{font-family:'Aggravo';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2108@1.1/SBAggroB.woff') format('woff');font-weight:700;font-display:swap}
+
+/* ─────────── 디자인 토큰 ─────────── */
+:root{
+  --paper:#FBF8FF; --card:#FFFFFF;
+  --ink:#2E2A4F; --ink-soft:#726E95;
+  --grape:#8B7BF0; --grape-soft:#EDE8FF; --grape-deep:#6A56D6;
+  --mint:#4FC9B0;  --mint-soft:#DFF7F1;
+  --peach:#FF9B82; --peach-soft:#FFEBE5;
+  --butter:#FFC93C;--butter-soft:#FFF4D6;
+  --line:#EAE4F9;
+  --r-lg:26px; --r-md:18px; --r-sm:12px;
+  --shadow:0 12px 28px -16px rgba(74,52,150,.35);
+  --shadow-lift:0 18px 34px -14px rgba(74,52,150,.42);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Aggravo','Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  font-weight:300; color:var(--ink); background:var(--paper);
+  -webkit-font-smoothing:antialiased; line-height:1.6;
+}
+body::before{
+  content:''; position:fixed; inset:0 0 auto 0; height:340px; z-index:-1;
+  background:linear-gradient(180deg,#F1ECFF 0%, rgba(251,248,255,0) 100%);
+}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+:focus-visible{outline:3px solid var(--grape);outline-offset:2px;border-radius:6px}
+
+/* ─────────── 레이아웃 ─────────── */
+.wrap{max-width:860px;margin:0 auto;padding:22px 16px 64px}
+.stack>*+*{margin-top:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.grow{flex:1 1 160px;min-width:0}
+
+/* ─────────── 헤더 ─────────── */
+.brandbar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.brandmark{
+  width:42px;height:42px;border-radius:14px;flex:none;
+  background:linear-gradient(135deg,var(--grape),var(--mint));
+  display:grid;place-items:center;font-size:20px;
+  box-shadow:var(--shadow);
+}
+.brandtext b{display:block;font-weight:700;font-size:17px;letter-spacing:-.02em}
+.brandtext span{display:block;font-size:12px;color:var(--ink-soft)}
+
+/* ─────────── 탭 ─────────── */
+.tabs{
+  display:flex;gap:4px;padding:5px;background:#fff;border:1px solid var(--line);
+  border-radius:999px;box-shadow:var(--shadow);margin-bottom:18px;
+}
+.tab{
+  flex:1;padding:11px 6px;border-radius:999px;font-weight:500;font-size:14px;
+  color:var(--ink-soft);transition:.18s;white-space:nowrap;
+}
+.tab:hover{background:var(--grape-soft);color:var(--grape-deep)}
+.tab[aria-selected="true"]{background:var(--ink);color:#fff}
+.tab[aria-selected="true"]:hover{background:var(--ink)}
+
+/* ─────────── 카드 ─────────── */
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:20px;box-shadow:var(--shadow);
+}
+.card-title{font-weight:700;font-size:16px;margin:0 0 4px;letter-spacing:-.01em}
+.card-sub{font-size:13px;color:var(--ink-soft);margin:0 0 16px}
+
+/* ─────────── 챗봇 배너 (시그니처) ─────────── */
+.banner{
+  position:relative;overflow:hidden;border-radius:var(--r-lg);padding:22px;
+  background:linear-gradient(135deg,#8B7BF0 0%,#A78BF5 45%,#6FD8C4 130%);
+  color:#fff;box-shadow:var(--shadow-lift);
+}
+.banner::after{
+  content:'';position:absolute;right:-40px;top:-50px;width:180px;height:180px;
+  border-radius:50%;background:rgba(255,255,255,.14);
+}
+.banner-eyebrow{font-size:12px;font-weight:500;opacity:.9;letter-spacing:.06em}
+.banner-title{font-size:22px;font-weight:700;margin:6px 0 14px;line-height:1.35;letter-spacing:-.02em}
+.banner-btn{
+  display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--grape-deep);
+  font-weight:700;font-size:15px;padding:14px 22px;border-radius:999px;text-decoration:none;
+  box-shadow:0 8px 18px -8px rgba(0,0,0,.4);transition:transform .16s;position:relative;z-index:1;
+}
+.banner-btn:hover{transform:translateY(-2px)}
+.banner-btn:active{transform:translateY(1px)}
+.banner-note{font-size:12px;opacity:.92;margin-top:12px;position:relative;z-index:1}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;position:relative;z-index:1}
+.chip{background:rgba(255,255,255,.22);border-radius:999px;padding:5px 12px;font-size:12px}
+
+/* ─────────── 폼 ─────────── */
+label.lab{display:block;font-size:12.5px;font-weight:500;color:var(--ink-soft);margin-bottom:6px}
+.inp,select.inp{
+  width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--r-sm);
+  background:#FCFAFF;transition:.15s;
+}
+.inp:focus{border-color:var(--grape);background:#fff;outline:none}
+select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238B7BF0' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
+
+/* ─────────── Q&A 말풍선 세트 ─────────── */
+.qaset{border:1.5px dashed var(--line);border-radius:var(--r-md);padding:14px;background:#FDFCFF}
+.qaset+.qaset{margin-top:12px}
+.qahead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.qanum{
+  font-weight:700;font-size:12px;color:var(--grape-deep);background:var(--grape-soft);
+  padding:4px 10px;border-radius:999px;letter-spacing:.04em;
+}
+.del{font-size:12px;color:var(--peach);font-weight:500;padding:4px 8px;border-radius:8px}
+.del:hover{background:var(--peach-soft)}
+.bub{padding:12px 14px;position:relative}
+.bub+.bub{margin-top:8px}
+.bub .tag{font-size:11.5px;font-weight:500;margin-bottom:6px;display:block}
+.bub textarea{width:100%;border:none;background:transparent;resize:vertical;min-height:52px;padding:0;line-height:1.65}
+.bub textarea:focus{outline:none}
+.bub textarea::placeholder{color:#B3AECB}
+.bub-q{background:var(--grape-soft);border-radius:18px 18px 4px 18px}
+.bub-q .tag{color:var(--grape-deep)}
+.bub-a{background:var(--mint-soft);border-radius:18px 18px 18px 4px}
+.bub-a .tag{color:#22867A}
+.bub-r{background:var(--butter-soft);border-radius:14px;border-left:4px solid var(--butter)}
+.bub-r .tag{color:#96690A}
+
+/* ─────────── 버튼 ─────────── */
+.btn{
+  padding:13px 20px;border-radius:999px;font-weight:500;font-size:14px;transition:.16s;
+  border:1.5px solid transparent;
+}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--ink);color:#fff;font-weight:700;box-shadow:var(--shadow)}
+.btn-primary:hover{background:#413B69}
+.btn-primary:disabled{background:#C9C4DE;box-shadow:none;cursor:not-allowed;transform:none}
+.btn-ghost{background:#fff;border-color:var(--line);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--grape);color:var(--grape-deep)}
+.btn-add{
+  width:100%;background:var(--grape-soft);color:var(--grape-deep);font-weight:700;
+  border:1.5px dashed #C9BEFA;margin-top:12px;
+}
+.btn-add:hover{background:#E3DCFF}
+.btn-wide{width:100%;padding:16px;font-size:16px}
+
+/* ─────────── 상태 메시지 ─────────── */
+.msg{border-radius:var(--r-sm);padding:12px 14px;font-size:13.5px;font-weight:500}
+.msg-ok{background:var(--mint-soft);color:#1F7A6E}
+.msg-bad{background:var(--peach-soft);color:#C4462C}
+.msg-info{background:var(--grape-soft);color:var(--grape-deep)}
+.empty{text-align:center;padding:40px 20px;color:var(--ink-soft);font-size:14px}
+.empty .big{font-size:36px;display:block;margin-bottom:10px}
+
+/* ─────────── 포트폴리오 타임라인 ─────────── */
+.timeline{position:relative;padding-left:26px;margin-top:18px}
+.timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:2px;background:var(--line)}
+.tl-item{position:relative}
+.tl-item+.tl-item{margin-top:16px}
+.tl-dot{
+  position:absolute;left:-26px;top:22px;width:16px;height:16px;border-radius:50%;
+  background:#fff;border:3px solid var(--grape);
+}
+.rec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.rec-topic{font-weight:700;font-size:15.5px;letter-spacing:-.01em}
+.rec-date{font-size:12px;color:var(--ink-soft);white-space:nowrap}
+.rec-count{font-size:12px;color:var(--grape-deep);background:var(--grape-soft);padding:3px 10px;border-radius:999px;font-weight:500}
+.fb{
+  margin-top:14px;background:var(--butter-soft);border:1.5px solid #FFE08A;
+  border-radius:var(--r-md);padding:14px;
+}
+.fb-tag{font-size:12px;font-weight:700;color:#96690A;display:block;margin-bottom:5px}
+.fb-body{font-size:14px;white-space:pre-wrap}
+.readbub{padding:11px 14px;font-size:14px;white-space:pre-wrap}
+.readbub+.readbub{margin-top:7px}
+
+/* ─────────── 교사용 표 ─────────── */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-md);margin-top:14px;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:720px}
+th{background:#F6F2FF;text-align:left;padding:11px 12px;font-weight:500;color:var(--ink-soft);white-space:nowrap;position:sticky;top:0}
+td{padding:11px 12px;border-top:1px solid var(--line);vertical-align:top}
+tr:hover td{background:#FCFAFF}
+.qacell{max-width:340px;font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+.fbcell{min-width:260px}
+.fbinput{
+  width:100%;min-height:58px;border:1.5px solid var(--line);border-radius:12px;padding:9px 11px;
+  background:#FFFDF6;resize:vertical;font-size:12.5px;line-height:1.55;transition:.15s;
+}
+.fbinput:focus{outline:none;border-color:var(--butter);background:#fff}
+.fbinput::placeholder{color:#B9B4CE}
+.fbrow{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap}
+.btn-save{background:var(--ink);color:#fff;font-weight:500;font-size:12px;padding:7px 15px;border-radius:999px}
+.btn-save:hover{background:#413B69}
+.btn-save:disabled{background:#DDD8EC;cursor:default}
+.quick{font-size:11.5px;color:var(--ink-soft);background:#F5F1FF;border:1px solid var(--line);border-radius:999px;padding:5px 10px}
+.quick:hover{background:var(--grape-soft);color:var(--grape-deep)}
+.savenote{font-size:11.5px;font-weight:500}
+.savenote.ok{color:#1F7A6E}
+.savenote.bad{color:#C4462C}
+.checkline{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);margin-top:14px}
+.checkline input{width:17px;height:17px;accent-color:var(--grape);cursor:pointer}
+.stat{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.stat-box{flex:1 1 110px;background:#F8F5FF;border-radius:var(--r-md);padding:12px 14px}
+.stat-box b{display:block;font-size:22px;font-weight:700;color:var(--grape-deep);line-height:1.2}
+.stat-box span{font-size:12px;color:var(--ink-soft)}
+
+/* ─────────── 푸터 ─────────── */
+.footer{text-align:center;margin-top:38px;padding-top:22px;border-top:1px solid var(--line)}
+.sig{
+  display:inline-flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);
+  border-radius:999px;padding:8px 16px 8px 9px;box-shadow:var(--shadow);text-decoration:none;color:var(--ink);
+}
+.sig .dot{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--grape),var(--peach));display:grid;place-items:center;font-size:13px}
+.sig b{font-weight:700;font-size:13.5px;letter-spacing:-.01em}
+.footer p{font-size:11.5px;color:var(--ink-soft);margin:10px 0 0}
+
+/* ─────────── 로딩 ─────────── */
+.spin{width:22px;height:22px;border:3px solid var(--grape-soft);border-top-color:var(--grape);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+.fadein{animation:fi .28s ease-out}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:520px){
+  .banner-title{font-size:19px}
+  .banner-btn{width:100%;justify-content:center}
+  .tab{font-size:13px;padding:10px 4px}
+}
+</style>
+</head>
+<body>
+<div id="root"><div class="wrap"><div class="spin" style="margin-top:80px"></div></div></div>
+
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+/* ══════════════════════════════════════════════════════════
+   ① 여기에 Apps Script 웹앱 URL을 붙여넣으세요.
+      (배포 > 새 배포 > 웹 앱 > 액세스 권한: 모든 사용자)
+      비워두면 '체험 모드'로 실행되어 시트 없이도 화면을 볼 수 있습니다.
+   ══════════════════════════════════════════════════════════ */
+const API_URL = "https://script.google.com/macros/s/AKfycbyjTaYr9zkj_TXV6rnuTaGsoo37RxmYSjtVvlkzOy9BzclreCaScnT7dCmDmLtFxCWaxg/exec";
+const DEMO_TEACHER_PW = "mirae1234";   // 체험 모드에서만 쓰입니다. 실제 비밀번호는 Code.gs 에만 두세요.
+
+const DEMO = !API_URL || API_URL.indexOf("http") !== 0;
+
+/* ─────────── 체험 모드용 임시 데이터 ─────────── */
+const DEMO_CONFIG = {
+  classCodes: ["301", "302", "HIST_A"],
+  topics: ["조선의 신분제도는 정말 불평등했을까?", "고려의 대외 항쟁, 무엇을 지켰나", "일제강점기 사람들의 하루"],
+  chatbotUrl: "https://gemini.google.com/"
+};
+let DEMO_SEQ = 2;
+let DEMO_ROWS = [{
+  row: DEMO_SEQ++,
+  timestamp: new Date(Date.now() - 864e5 * 3).toISOString(),
+  classCode: "301", studentId: "10312", name: "김미래",
+  topic: "조선의 신분제도는 정말 불평등했을까?",
+  qa: [{ q: "조선시대 노비도 재산을 가질 수 있었나요?", a: "일부 외거노비는 재산을 소유하고 매매할 수 있었습니다.", r: "노비라고 다 똑같은 처지가 아니었다는 게 놀라웠다." }],
+  feedback: "자료를 그대로 믿지 않고 되물어본 점이 좋았어요. 다음엔 출처도 한 번 확인해 볼까요?"
+}];
+
+/* ─────────── API ─────────── */
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
+async function apiGet(params) {
+  if (DEMO) {
+    await wait(400);
+    if (params.action === "config") return DEMO_CONFIG;
+    if (params.action === "portfolio")
+      return { records: DEMO_ROWS.filter(r => r.classCode === params.classCode && String(r.studentId) === String(params.studentId) && r.name === params.name) };
+    if (params.action === "all")
+      return params.pw === DEMO_TEACHER_PW ? { records: DEMO_ROWS } : { error: "비밀번호가 맞지 않습니다." };
+  }
+  const qs = Object.keys(params).map(k => encodeURIComponent(k) + "=" + encodeURIComponent(params[k])).join("&");
+  const res = await fetch(API_URL + "?" + qs);
+  if (!res.ok) throw new Error("서버 응답 " + res.status);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+async function apiPost(payload) {
+  if (DEMO) {
+    await wait(500);
+    if (payload.action === "feedback") {
+      if (payload.pw !== DEMO_TEACHER_PW) return { error: "비밀번호가 맞지 않습니다." };
+      DEMO_ROWS = DEMO_ROWS.map(r => r.row === payload.row ? { ...r, feedback: payload.feedback } : r);
+      return { ok: true };
+    }
+    DEMO_ROWS = [{ ...payload, row: DEMO_SEQ++, timestamp: new Date().toISOString(), feedback: "" }, ...DEMO_ROWS];
+    return { ok: true };
+  }
+  // Content-Type을 text/plain으로 보내야 CORS 사전 요청 없이 Apps Script가 받습니다.
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+/* ─────────── 유틸 ─────────── */
+const fmtDate = (iso) => {
+  const d = new Date(iso);
+  if (isNaN(d)) return String(iso || "");
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+
+function downloadCsv(rows, filename) {
+  const head = ["제출시각", "클래스코드", "학번", "이름", "탐구주제", "번호", "AI에게 던진 질문", "AI 답변", "나의 성찰", "선생님 피드백"];
+  const esc = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+  const lines = [head.map(esc).join(",")];
+  rows.forEach(r => {
+    const qa = r.qa && r.qa.length ? r.qa : [{ q: "", a: "", r: "" }];
+    qa.forEach((s, i) => lines.push([fmtDate(r.timestamp), r.classCode, r.studentId, r.name, r.topic, i + 1, s.q, s.a, s.r, r.feedback].map(esc).join(",")));
+  });
+  const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* ─────────── 공통 조각 ─────────── */
+function Field({ label, children }) {
+  return <div className="grow"><label className="lab">{label}</label>{children}</div>;
+}
+
+function Msg({ kind, children }) {
+  if (!children) return null;
+  return <div className={"msg msg-" + kind + " fadein"}>{children}</div>;
+}
+
+/* ─────────── 상단 챗봇 배너 ─────────── */
+function ChatbotBanner({ config }) {
+  const url = config && config.chatbotUrl;
+  return (
+    <div className="banner">
+      <div className="banner-eyebrow">STEP 1 · 먼저 대화부터</div>
+      <div className="banner-title">오늘의 AI 챗봇과 이야기 나누러 갈까요?</div>
+      {url ? (
+        <a className="banner-btn" href={url} target="_blank" rel="noopener noreferrer">🚀 오늘의 AI 챗봇 열기 (새 탭)</a>
+      ) : (
+        <span className="banner-btn" style={{ opacity: .75 }}>오늘은 등록된 챗봇 주소가 없어요</span>
+      )}
+      {config && config.topics && config.topics.length > 0 && (
+        <div className="chips">
+          {config.topics.map((t, i) => <span className="chip" key={i}>{t}</span>)}
+        </div>
+      )}
+      <div className="banner-note">대화가 끝나면 이 화면으로 돌아와 아래에 질문과 답변을 옮겨 적어 주세요.</div>
+    </div>
+  );
+}
+
+/* ═══════════ 화면 1 · 기록 제출 ═══════════ */
+function SubmitView({ config }) {
+  const [classCode, setClassCode] = useState("");
+  const [studentId, setStudentId] = useState("");
+  const [name, setName] = useState("");
+  const [topic, setTopic] = useState("");
+  const [sets, setSets] = useState([{ q: "", a: "", r: "" }]);
+  const [status, setStatus] = useState(null);
+  const [sending, setSending] = useState(false);
+
+  const update = (i, key, val) => setSets(s => s.map((x, j) => j === i ? { ...x, [key]: val } : x));
+  const addSet = () => setSets(s => [...s, { q: "", a: "", r: "" }]);
+  const delSet = (i) => setSets(s => s.length === 1 ? s : s.filter((_, j) => j !== i));
+
+  async function submit() {
+    const filled = sets.filter(s => s.q.trim() || s.a.trim() || s.r.trim());
+    if (!classCode) return setStatus({ kind: "bad", text: "클래스 코드를 선택해 주세요." });
+    if (!studentId.trim()) return setStatus({ kind: "bad", text: "학번을 입력해 주세요." });
+    if (!name.trim()) return setStatus({ kind: "bad", text: "이름을 입력해 주세요." });
+    if (!topic) return setStatus({ kind: "bad", text: "탐구 주제를 선택해 주세요." });
+    if (filled.length === 0) return setStatus({ kind: "bad", text: "질문·답변을 한 세트 이상 적어 주세요." });
+
+    setSending(true); setStatus(null);
+    try {
+      await apiPost({ action: "submit", classCode, studentId: studentId.trim(), name: name.trim(), topic, qa: filled });
+      setStatus({ kind: "ok", text: "제출했습니다! '내 기록장' 탭에서 바로 확인할 수 있어요." });
+      setSets([{ q: "", a: "", r: "" }]);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (e) {
+      setStatus({ kind: "bad", text: "제출하지 못했습니다. " + e.message + " · 인터넷 연결을 확인하고 다시 눌러 주세요." });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="stack">
+      <ChatbotBanner config={config} />
+
+      <div className="card">
+        <h2 className="card-title">누가 기록하나요?</h2>
+        <p className="card-sub">로그인은 없어요. 아래 세 가지만 정확히 적으면 됩니다.</p>
+        <div className="row">
+          <Field label="클래스 코드">
+            <select className="inp" value={classCode} onChange={e => setClassCode(e.target.value)}>
+              <option value="">선택</option>
+              {(config.classCodes || []).map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+          <Field label="학번"><input className="inp" value={studentId} onChange={e => setStudentId(e.target.value)} placeholder="10312" inputMode="numeric" /></Field>
+          <Field label="이름"><input className="inp" value={name} onChange={e => setName(e.target.value)} placeholder="김미래" /></Field>
+        </div>
+        <div style={{ marginTop: 14 }}>
+          <label className="lab">오늘의 탐구 주제</label>
+          <select className="inp" value={topic} onChange={e => setTopic(e.target.value)}>
+            <option value="">선택</option>
+            {(config.topics || []).map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="card">
+        <h2 className="card-title">AI와 나눈 대화 옮겨 적기</h2>
+        <p className="card-sub">질문 하나당 한 세트예요. 여러 번 물어봤다면 아래에서 세트를 계속 추가하세요.</p>
+        {sets.map((s, i) => (
+          <div className="qaset fadein" key={i}>
+            <div className="qahead">
+              <span className="qanum">{String(i + 1).padStart(2, "0")}번째 질문</span>
+              {sets.length > 1 && <button className="del" onClick={() => delSet(i)}>이 세트 지우기</button>}
+            </div>
+            <div className="bub bub-q">
+              <span className="tag">🙋 AI에게 던진 질문</span>
+              <textarea value={s.q} onChange={e => update(i, "q", e.target.value)} placeholder="예) 조선시대 노비도 재산을 가질 수 있었나요?" />
+            </div>
+            <div className="bub bub-a">
+              <span className="tag">🤖 AI 답변</span>
+              <textarea value={s.a} onChange={e => update(i, "a", e.target.value)} placeholder="AI가 답한 내용을 붙여넣거나 요약해서 적어요." />
+            </div>
+            <div className="bub bub-r">
+              <span className="tag">✏️ 나의 성찰</span>
+              <textarea value={s.r} onChange={e => update(i, "r", e.target.value)} placeholder="새로 알게 된 점, 이상하다고 느낀 점, 더 궁금해진 점" />
+            </div>
+          </div>
+        ))}
+        <button className="btn btn-add" onClick={addSet}>+ 질문·답변 세트 추가</button>
+      </div>
+
+      <Msg kind={status ? status.kind : "ok"}>{status ? status.text : null}</Msg>
+      <button className="btn btn-primary btn-wide" onClick={submit} disabled={sending}>
+        {sending ? "보내는 중…" : "기록 제출하기"}
+      </button>
+    </div>
+  );
+}
+
+/* ═══════════ 화면 2 · 내 기록장 ═══════════ */
+function RecordCard({ rec }) {
+  return (
+    <div className="tl-item fadein">
+      <span className="tl-dot" />
+      <div className="card">
+        <div className="rec-head">
+          <div>
+            <div className="rec-topic">{rec.topic || "주제 없음"}</div>
+            <div className="rec-date">{fmtDate(rec.timestamp)}</div>
+          </div>
+          <span className="rec-count">질문 {(rec.qa || []).length}개</span>
+        </div>
+        {(rec.qa || []).map((s, i) => (
+          <div key={i} style={{ marginTop: i ? 14 : 0 }}>
+            <span className="qanum">{String(i + 1).padStart(2, "0")}</span>
+            <div className="readbub bub-q" style={{ marginTop: 7 }}>🙋 {s.q}</div>
+            {s.a && <div className="readbub bub-a">🤖 {s.a}</div>}
+            {s.r && <div className="readbub bub-r">✏️ {s.r}</div>}
+          </div>
+        ))}
+        {rec.feedback && (
+          <div className="fb">
+            <span className="fb-tag">👩‍🏫 선생님 피드백</span>
+            <div className="fb-body">{rec.feedback}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PortfolioView({ config }) {
+  const [classCode, setClassCode] = useState("");
+  const [studentId, setStudentId] = useState("");
+  const [name, setName] = useState("");
+  const [records, setRecords] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function search() {
+    if (!classCode || !studentId.trim() || !name.trim()) {
+      setErr("클래스 코드, 학번, 이름을 모두 채워 주세요."); return;
+    }
+    setLoading(true); setErr(""); setRecords(null);
+    try {
+      const data = await apiGet({ action: "portfolio", classCode, studentId: studentId.trim(), name: name.trim() });
+      setRecords(data.records || []);
+    } catch (e) {
+      setErr("기록을 불러오지 못했습니다. " + e.message);
+    } finally { setLoading(false); }
+  }
+
+  return (
+    <div className="stack">
+      <div className="card">
+        <h2 className="card-title">내 기록장 열기</h2>
+        <p className="card-sub">제출할 때 적은 것과 똑같이 입력해야 기록이 나와요.</p>
+        <div className="row">
+          <Field label="클래스 코드">
+            <select className="inp" value={classCode} onChange={e => setClassCode(e.target.value)}>
+              <option value="">선택</option>
+              {(config.classCodes || []).map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+          <Field label="학번"><input className="inp" value={studentId} onChange={e => setStudentId(e.target.value)} inputMode="numeric" /></Field>
+          <Field label="이름"><input className="inp" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === "Enter" && search()} /></Field>
+        </div>
+        <button className="btn btn-primary btn-wide" style={{ marginTop: 16 }} onClick={search} disabled={loading}>
+          {loading ? "찾는 중…" : "내 기록 찾기"}
+        </button>
+        <Msg kind="bad">{err}</Msg>
+      </div>
+
+      {records && records.length === 0 && (
+        <div className="card empty"><span className="big">🗂️</span>아직 제출한 기록이 없어요.<br />'기록 제출' 탭에서 첫 기록을 남겨 보세요.</div>
+      )}
+      {records && records.length > 0 && (
+        <div>
+          <div className="msg msg-info">{name} 학생의 탐구 기록 {records.length}개를 찾았어요.</div>
+          <div className="timeline">
+            {records.map((r, i) => <RecordCard rec={r} key={i} />)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════ 화면 3 · 선생님 모드 ═══════════ */
+const QUICK_PHRASES = [
+  "질문이 날카로워요 👍",
+  "출처를 한 번 확인해 볼까요?",
+  "성찰이 인상적이에요 ✨",
+  "조금 더 자세히 써 볼까요?"
+];
+
+function FeedbackCell({ rec, pw, onSaved }) {
+  const [text, setText] = useState(rec.feedback || "");
+  const [state, setState] = useState("idle");   // idle | saving | saved | error
+  const [err, setErr] = useState("");
+  const [open, setOpen] = useState(false);
+  const savedRef = useRef(rec.feedback || "");
+  const dirty = text !== (rec.feedback || "");
+
+  // 새로고침으로 시트 값이 달라졌을 때만 입력칸을 맞춰 준다
+  useEffect(() => {
+    if ((rec.feedback || "") !== savedRef.current) {
+      savedRef.current = rec.feedback || "";
+      setText(rec.feedback || ""); setState("idle");
+    }
+  }, [rec.feedback]);
+
+  const addPhrase = (p) => setText(t => (t.trim() ? t.replace(/\s*$/, " ") : "") + p);
+
+  async function save() {
+    setState("saving"); setErr("");
+    try {
+      await apiPost({ action: "feedback", pw: pw, row: rec.row, name: rec.name, feedback: text });
+      savedRef.current = text;
+      setState("saved");
+      onSaved(rec.row, text);
+    } catch (e) {
+      setState("error"); setErr(e.message);
+    }
+  }
+
+  return (
+    <td className="fbcell">
+      <textarea
+        className="fbinput" value={text} rows={2}
+        onChange={e => { setText(e.target.value); setState("idle"); }}
+        onFocus={() => setOpen(true)}
+        onKeyDown={e => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && dirty) save(); }}
+        placeholder="여기에 피드백을 쓰고 저장하세요" />
+      {(open || dirty) && (
+        <div className="fbrow">
+          {QUICK_PHRASES.map(p => (
+            <button className="quick" key={p} onClick={() => addPhrase(p)}>{p}</button>
+          ))}
+        </div>
+      )}
+      <div className="fbrow">
+        <button className="btn-save" onClick={save} disabled={!dirty || state === "saving"}>
+          {state === "saving" ? "저장 중…" : "저장"}
+        </button>
+        {state === "saved" && !dirty && <span className="savenote ok">저장했습니다</span>}
+        {state === "error" && <span className="savenote bad">{err}</span>}
+        {dirty && state !== "saving" && <span className="savenote" style={{ color: "var(--ink-soft)" }}>저장 안 됨</span>}
+      </div>
+    </td>
+  );
+}
+
+function TeacherView() {
+  const [pw, setPw] = useState("");
+  const [authed, setAuthed] = useState(false);
+  const [rows, setRows] = useState([]);
+  const [filter, setFilter] = useState("전체");
+  const [todoOnly, setTodoOnly] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function enter() {
+    setLoading(true); setErr("");
+    try {
+      const data = await apiGet({ action: "all", pw });
+      setRows(data.records || []); setAuthed(true);
+    } catch (e) {
+      setErr("들어갈 수 없습니다. " + e.message);
+    } finally { setLoading(false); }
+  }
+
+  async function refresh() {
+    setLoading(true);
+    try { const d = await apiGet({ action: "all", pw }); setRows(d.records || []); }
+    catch (e) { setErr("새로고침 실패: " + e.message); }
+    finally { setLoading(false); }
+  }
+
+  const applySaved = useCallback((row, text) => {
+    setRows(rs => rs.map(r => r.row === row ? { ...r, feedback: text } : r));
+  }, []);
+
+  const classes = useMemo(() => ["전체", ...Array.from(new Set(rows.map(r => r.classCode).filter(Boolean)))], [rows]);
+  const shown = useMemo(() => {
+    let list = filter === "전체" ? rows : rows.filter(r => r.classCode === filter);
+    if (todoOnly) list = list.filter(r => !r.feedback);
+    return list;
+  }, [rows, filter, todoOnly]);
+  const pending = useMemo(() => rows.filter(r => !r.feedback).length, [rows]);
+  const students = useMemo(() => new Set(shown.map(r => r.classCode + "/" + r.studentId)).size, [shown]);
+  const questions = useMemo(() => shown.reduce((n, r) => n + (r.qa || []).length, 0), [shown]);
+
+  if (!authed) return (
+    <div className="card">
+      <h2 className="card-title">선생님 모드</h2>
+      <p className="card-sub">학급 전체 제출 현황을 보고 엑셀로 내려받습니다.</p>
+      <label className="lab">비밀번호</label>
+      <input className="inp" type="password" value={pw} onChange={e => setPw(e.target.value)}
+             onKeyDown={e => e.key === "Enter" && enter()} placeholder="비밀번호 입력" />
+      <button className="btn btn-primary btn-wide" style={{ marginTop: 16 }} onClick={enter} disabled={loading}>
+        {loading ? "확인 중…" : "들어가기"}
+      </button>
+      <Msg kind="bad">{err}</Msg>
+    </div>
+  );
+
+  return (
+    <div className="stack">
+      <div className="card">
+        <div className="rec-head">
+          <div>
+            <h2 className="card-title">제출 현황</h2>
+            <p className="card-sub" style={{ margin: 0 }}>피드백 칸에 바로 쓰고 저장하면 시트와 학생 화면에 함께 반영됩니다.</p>
+          </div>
+        </div>
+        <div className="row" style={{ marginTop: 14 }}>
+          <Field label="학급 필터">
+            <select className="inp" value={filter} onChange={e => setFilter(e.target.value)}>
+              {classes.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+            <button className="btn btn-ghost" onClick={refresh} disabled={loading}>새로고침</button>
+            <button className="btn btn-primary" onClick={() => downloadCsv(shown, `탐구기록_${filter}_${new Date().toISOString().slice(0, 10)}.csv`)}>CSV 내려받기</button>
+          </div>
+        </div>
+        <label className="checkline">
+          <input type="checkbox" checked={todoOnly} onChange={e => setTodoOnly(e.target.checked)} />
+          피드백을 아직 안 쓴 기록만 보기 {pending > 0 && <b style={{ color: "var(--peach)" }}>({pending}건)</b>}
+        </label>
+        <div className="stat">
+          <div className="stat-box"><b>{shown.length}</b><span>제출 건수</span></div>
+          <div className="stat-box"><b>{students}</b><span>참여 학생</span></div>
+          <div className="stat-box"><b>{questions}</b><span>기록된 질문</span></div>
+        </div>
+        <Msg kind="bad">{err}</Msg>
+        {shown.length === 0 ? (
+          <div className="empty"><span className="big">📭</span>아직 제출된 기록이 없습니다.</div>
+        ) : (
+          <div className="tablewrap">
+            <table>
+              <thead><tr><th>제출시각</th><th>학급</th><th>학번</th><th>이름</th><th>주제</th><th>질문·답변</th><th>피드백</th></tr></thead>
+              <tbody>
+                {shown.map((r, i) => (
+                  <tr key={r.row || i}>
+                    <td style={{ whiteSpace: "nowrap" }}>{fmtDate(r.timestamp)}</td>
+                    <td>{r.classCode}</td><td>{r.studentId}</td><td>{r.name}</td>
+                    <td>{r.topic}</td>
+                    <td className="qacell">{(r.qa || []).map((s, j) => <div key={j} style={{ marginBottom: 6 }}><b>Q{j + 1}.</b> {s.q}<br />{s.r ? "✏️ " + s.r : ""}</div>)}</td>
+                    <FeedbackCell rec={r} pw={pw} onSaved={applySaved} />
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════ 앱 셸 ═══════════ */
+const TABS = [{ id: "submit", label: "기록 제출" }, { id: "portfolio", label: "내 기록장" }, { id: "teacher", label: "선생님" }];
+
+function App() {
+  const [tab, setTab] = useState("submit");
+  const [config, setConfig] = useState(null);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    apiGet({ action: "config" })
+      .then(setConfig)
+      .catch(e => { setErr("수업 설정을 불러오지 못했습니다. " + e.message); setConfig({ classCodes: [], topics: [], chatbotUrl: "" }); });
+  }, []);
+
+  return (
+    <div className="wrap">
+      <div className="brandbar">
+        <div className="brandmark">🧭</div>
+        <div className="brandtext">
+          <b>AI 탐구 기록장</b>
+          <span>물어보고 · 옮겨 적고 · 쌓아 두기</span>
+        </div>
+      </div>
+
+      <div className="tabs" role="tablist">
+        {TABS.map(t => (
+          <button key={t.id} className="tab" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>{t.label}</button>
+        ))}
+      </div>
+
+      {DEMO && <div className="msg msg-info" style={{ marginBottom: 14 }}>체험 모드입니다. 코드 상단 <b>API_URL</b>에 Apps Script 주소를 넣으면 구글 시트와 연결됩니다.</div>}
+      <Msg kind="bad">{err}</Msg>
+
+      {!config ? <div className="spin" style={{ marginTop: 60 }} /> : (
+        <div className="fadein">
+          {tab === "submit" && <SubmitView config={config} />}
+          {tab === "portfolio" && <PortfolioView config={config} />}
+          {tab === "teacher" && <TeacherView />}
+        </div>
+      )}
+
+      <div className="footer">
+        <a className="sig" href="https://www.instagram.com/miraehistory" target="_blank" rel="noopener noreferrer">
+          <span className="dot">✦</span><b>@miraehistory</b>
+        </a>
+        <p>AI 탐구 기록장 · 수업용으로 자유롭게 쓰세요</p>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
