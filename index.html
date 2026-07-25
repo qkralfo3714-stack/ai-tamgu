@@ -284,6 +284,7 @@ const DEFAULT_SCHEMA = {
   title: "챗봇 흔적 분석",
   help: "AI와 주고받은 내용과 이를 검토하며 생각을 발전시킨 과정을 기록합니다.",
   stepName: "탐구 과정",
+  toolUrl: "https://gemini.google.com/",
   fields: [
     { key: "q", enabled: true, label: "🙋 AI에게 한 질문·요청", placeholder: "예) 이 현상이 일어나는 까닭을 근거와 함께 설명해 줘." },
     { key: "a", enabled: true, label: "🤖 AI 답변·결과", placeholder: "AI가 답한 내용을 붙여넣거나 핵심만 요약해 적어요." },
@@ -293,6 +294,14 @@ const DEFAULT_SCHEMA = {
 const FIELD_KEYS = ["q", "a", "r"];
 const FIELD_TONES = { q: "q", a: "a", r: "r" };
 const clampText = (value, fallback, max) => String(value || "").trim().slice(0, max) || fallback;
+function safeToolUrl(value) {
+  try {
+    const url = new URL(String(value || "").trim());
+    return ["http:", "https:"].includes(url.protocol) ? url.toString() : DEFAULT_SCHEMA.toolUrl;
+  } catch (_) {
+    return DEFAULT_SCHEMA.toolUrl;
+  }
+}
 function normalizeSchema(raw) {
   const source = raw || {};
   const rawFields = Array.isArray(source.fields) ? source.fields : [];
@@ -311,6 +320,7 @@ function normalizeSchema(raw) {
     title: clampText(source.title, DEFAULT_SCHEMA.title, 30),
     help: clampText(source.help, DEFAULT_SCHEMA.help, 120),
     stepName: clampText(source.stepName, DEFAULT_SCHEMA.stepName, 20),
+    toolUrl: safeToolUrl(source.toolUrl || DEFAULT_SCHEMA.toolUrl),
     fields
   };
 }
@@ -321,6 +331,7 @@ function schemaFromUrl() {
     title: p.get("recordTitle"),
     help: p.get("recordHelp"),
     stepName: p.get("stepName"),
+    toolUrl: p.get("toolUrl"),
     fields: FIELD_KEYS.map((key, i) => ({
       key,
       enabled: p.get(`${key}On`) !== "0",
@@ -336,6 +347,7 @@ function urlForSchema(schema) {
   url.searchParams.set("recordTitle", s.title);
   url.searchParams.set("recordHelp", s.help);
   url.searchParams.set("stepName", s.stepName);
+  url.searchParams.set("toolUrl", s.toolUrl);
   s.fields.forEach(f => {
     url.searchParams.set(`${f.key}On`, f.enabled ? "1" : "0");
     url.searchParams.set(`${f.key}Label`, f.label);
@@ -444,7 +456,7 @@ function Msg({ kind, children }) {
 
 /* ─────────── 상단 챗봇 배너 ─────────── */
 function ChatbotBanner({ config, schema }) {
-  const url = config && ((config.activityUrls && config.activityUrls.chatbot) || config.chatbotUrl);
+  const url = schema.toolUrl || (config && ((config.activityUrls && config.activityUrls.chatbot) || config.chatbotUrl));
   return (
     <div className="banner">
       <div className="banner-eyebrow">STEP 1 · {schema.title}</div>
@@ -453,11 +465,6 @@ function ChatbotBanner({ config, schema }) {
         <a className="banner-btn" href={url} target="_blank" rel="noopener noreferrer">🚀 AI 도구 열기 (새 탭)</a>
       ) : (
         <span className="banner-btn" style={{ opacity: .75 }}>오늘은 등록된 AI 도구 주소가 없어요</span>
-      )}
-      {config && config.topics && config.topics.length > 0 && (
-        <div className="chips">
-          {config.topics.map((t, i) => <span className="chip" key={i}>{t}</span>)}
-        </div>
       )}
       <div className="banner-note">활동이 끝나면 이 화면으로 돌아와 아래에 학습 과정을 기록해 주세요.</div>
     </div>
@@ -775,6 +782,12 @@ function TeacherSettings({ schema, onSchemaChange }) {
         <label className="lab">학생 안내 문구</label>
         <input className="inp" value={draft.help} maxLength={120}
                onChange={e => setDraft(s => ({ ...s, help: e.target.value }))} />
+      </div>
+      <div style={{ marginTop: 12 }}>
+        <label className="lab">학생이 열 AI 도구 주소</label>
+        <input className="inp" type="url" value={draft.toolUrl}
+               placeholder="https://gemini.google.com/"
+               onChange={e => setDraft(s => ({ ...s, toolUrl: e.target.value }))} />
       </div>
 
       <div className="settings-grid" style={{ marginTop: 14 }}>
