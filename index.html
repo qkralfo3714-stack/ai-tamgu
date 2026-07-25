@@ -340,6 +340,24 @@ function schemaFromUrl() {
     }))
   });
 }
+function schemaFromConfig(config) {
+  if (!config) return normalizeSchema(DEFAULT_SCHEMA);
+  const supplied = config.recordSchema || config.schema;
+  if (supplied) return normalizeSchema(supplied);
+  return normalizeSchema({
+    title: config.recordTitle,
+    help: config.recordHelp,
+    stepName: config.stepName,
+    toolUrl: config.toolUrl,
+    fields: FIELD_KEYS.map((key, i) => ({
+      key,
+      enabled: config[`${key}Enabled`] !== false,
+      label: config[`${key}Label`] || DEFAULT_SCHEMA.fields[i].label,
+      placeholder: config[`${key}Placeholder`] || DEFAULT_SCHEMA.fields[i].placeholder
+    }))
+  });
+}
+const hasSchemaInUrl = () => new URLSearchParams(location.search).has("recordTitle");
 function urlForSchema(schema) {
   const url = new URL(location.href);
   const s = normalizeSchema(schema);
@@ -766,7 +784,7 @@ function TeacherSettings({ schema, onSchemaChange }) {
   return (
     <div className="card">
       <h2 className="card-title">기록지 설정</h2>
-      <p className="card-sub">교과와 활동에 맞게 제목과 수집 항목을 바꾼 뒤, 전용 링크를 학생에게 공유하세요.</p>
+      <p className="card-sub">기본값은 연결된 구글 시트의 <b>Settings</b> 탭에서 관리합니다. 여기서 바꾼 내용은 현재 화면과 학생용 공유 링크에 적용됩니다.</p>
 
       <div className="row">
         <Field label="기록 방식 이름">
@@ -813,7 +831,7 @@ function TeacherSettings({ schema, onSchemaChange }) {
       </div>
 
       <div className="sharebox">
-        <p>설정은 공유 링크에 담깁니다. 학생은 별도 설정 없이 같은 항목이 적용된 기록장을 열게 됩니다.</p>
+        <p>시트의 기본값을 바꾸면 주소에 별도 설정이 없는 기록장에 자동 반영됩니다. 아래 설정은 공유 링크에 담겨 특정 수업용으로 사용할 수 있습니다.</p>
         <div className="row">
           <button className="btn btn-primary" onClick={apply}>이 화면에 적용</button>
           <button className="btn btn-ghost" onClick={copyShareLink}>{copied ? "링크 복사됨 ✓" : "학생용 링크 복사"}</button>
@@ -958,7 +976,10 @@ function App() {
 
   useEffect(() => {
     apiGet({ action: "config" })
-      .then(setConfig)
+      .then(data => {
+        setConfig(data);
+        if (!hasSchemaInUrl()) setSchema(schemaFromConfig(data));
+      })
       .catch(e => { setErr("수업 설정을 불러오지 못했습니다. " + e.message); setConfig({ classCodes: [], topics: [], chatbotUrl: "" }); });
   }, []);
 
