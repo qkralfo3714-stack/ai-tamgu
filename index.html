@@ -223,6 +223,16 @@ tr:hover td{background:#FCFAFF}
 .btn-save{background:var(--ink);color:#fff;font-weight:500;font-size:12px;padding:7px 15px;border-radius:999px}
 .btn-save:hover{background:#413B69}
 .btn-save:disabled{background:#DDD8EC;cursor:default}
+.btn-danger{
+  background:#fff;color:#C4462C;border:1.5px solid #FFD0C5;
+  font-size:12px;font-weight:500;padding:7px 12px;border-radius:999px;white-space:nowrap;
+}
+.btn-danger:hover{background:var(--peach-soft);border-color:var(--peach)}
+.btn-danger:disabled{opacity:.45;cursor:not-allowed}
+.danger-note{
+  margin-top:8px;padding:9px 11px;border-radius:10px;background:var(--peach-soft);
+  color:#A83C29;font-size:11.5px;line-height:1.5;
+}
 .quick{font-size:11.5px;color:var(--ink-soft);background:#F5F1FF;border:1px solid var(--line);border-radius:999px;padding:5px 10px}
 .quick:hover{background:var(--grape-soft);color:var(--grape-deep)}
 .savenote{font-size:11.5px;font-weight:500}
@@ -423,6 +433,25 @@ async function apiPost(payload) {
       DEMO_ROWS = DEMO_ROWS.map(r => r.row === payload.row ? { ...r, feedback: payload.feedback } : r);
       return { ok: true };
     }
+    if (payload.action === "deleteRecord") {
+      if (payload.pw !== DEMO_TEACHER_PW) throw new Error("비밀번호가 맞지 않습니다.");
+      DEMO_ROWS = DEMO_ROWS.filter(r => r.row !== payload.row);
+      return { ok: true, records: DEMO_ROWS };
+    }
+    if (payload.action === "deleteField") {
+      if (payload.pw !== DEMO_TEACHER_PW) throw new Error("비밀번호가 맞지 않습니다.");
+      let removedValues = 0;
+      DEMO_ROWS = DEMO_ROWS.map(r => ({
+        ...r,
+        qa: (r.qa || []).map(step => {
+          const next = { ...step };
+          if (String(next[payload.fieldKey] || "").trim()) removedValues += 1;
+          delete next[payload.fieldKey];
+          return next;
+        })
+      }));
+      return { ok: true, removedValues, records: DEMO_ROWS };
+    }
     DEMO_ROWS = [{ ...payload, row: DEMO_SEQ++, timestamp: new Date().toISOString(), feedback: "" }, ...DEMO_ROWS];
     return { ok: true };
   }
@@ -446,13 +475,17 @@ const fmtDate = (iso) => {
 };
 
 function downloadCsv(rows, filename, schema) {
-  const labels = FIELD_KEYS.map(key => schema.fields.find(f => f.key === key).label.replace(/^[^\p{L}\p{N}]+/u, ""));
+  const activeFields = schema.fields.filter(field => field.enabled);
+  const labels = activeFields.map(field => field.label.replace(/^[^\p{L}\p{N}]+/u, ""));
   const head = ["제출시각", "분석방식", "클래스코드", "학번", "이름", "탐구주제", "번호", ...labels, "선생님 피드백"];
   const esc = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
   const lines = [head.map(esc).join(",")];
   rows.forEach(r => {
     const qa = r.qa && r.qa.length ? r.qa : [{ q: "", a: "", r: "" }];
-    qa.forEach((s, i) => lines.push([fmtDate(r.timestamp), schema.title, r.classCode, r.studentId, r.name, recordTopic(r), i + 1, s.q, s.a, s.r, r.feedback].map(esc).join(",")));
+    qa.forEach((s, i) => lines.push([
+      fmtDate(r.timestamp), schema.title, r.classCode, r.studentId, r.name,
+      recordTopic(r), i + 1, ...activeFields.map(field => s[field.key] || ""), r.feedback
+    ].map(esc).join(",")));
   });
   const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
   const a = document.createElement("a");
@@ -750,9 +783,11 @@ function FeedbackCell({ rec, pw, onSaved }) {
   );
 }
 
-function TeacherSettings({ schema, onSchemaChange }) {
+function TeacherSettings({ schema, onSchemaChange, pw, rows, onRowsChanged }) {
   const [draft, setDraft] = useState(() => normalizeSchema(schema));
   const [copied, setCopied] = useState(false);
+  const [deletingKey, setDeletingKey] = useState("");
+  const [deleteNote, setDeleteNote] = useState("");
 
   useEffect(() => setDraft(normalizeSchema(schema)), [schema]);
 
@@ -762,6 +797,8 @@ function TeacherSettings({ schema, onSchemaChange }) {
   }));
 
   const enabledCount = draft.fields.filter(f => f.enabled).length;
+  const fieldValueCount = (key) => rows.reduce((total, rec) =>
+    total + (rec.qa || []).filter(step => String((step && step[key]) || "").trim()).length, 0);
   const apply = () => {
     const next = normalizeSchema(draft);
     setDraft(next);
@@ -779,6 +816,36 @@ function TeacherSettings({ schema, onSchemaChange }) {
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
+  }
+
+  async function deleteField(field) {
+    const valueCount = fieldValueCount(field.key);
+    const warning = valueCount
+      ? `‘${field.label}’ 항목과 기존 입력 ${valueCount}개를 모두 삭제할까요?\n\n삭제한 내용은 웹앱에서 복구할 수 없습니다.`
+      : `‘${field.label}’ 수집 항목을 삭제할까요?\n\n삭제한 항목은 학생 기록지와 내려받기 파일에서 사라집니다.`;
+    if (!window.confirm(warning)) return;
+
+    setDeletingKey(field.key); setDeleteNote("");
+    try {
+      const data = await apiPost({ action: "deleteField", pw, fieldKey: field.key });
+      const next = normalizeSchema({
+        ...draft,
+        fields: draft.fields.map(item => item.key === field.key ? { ...item, enabled: false } : item)
+      });
+      setDraft(next);
+      onSchemaChange(next);
+      onRowsChanged(data.records || rows.map(rec => ({
+        ...rec,
+        qa: (rec.qa || []).map(step => {
+          const cleaned = { ...step }; delete cleaned[field.key]; return cleaned;
+        })
+      })));
+      setDeleteNote(`‘${field.label}’ 항목을 삭제했습니다.${data.removedValues ? ` 기존 입력 ${data.removedValues}개도 함께 삭제했습니다.` : ""}`);
+    } catch (e) {
+      setDeleteNote("삭제 실패: " + e.message);
+    } finally {
+      setDeletingKey("");
+    }
   }
 
   return (
@@ -813,12 +880,21 @@ function TeacherSettings({ schema, onSchemaChange }) {
           <div className="settings-field" aria-disabled={!f.enabled} key={f.key}>
             <div className="settings-head">
               <b>수집 항목 {i + 1}</b>
-              <label className="toggle">
-                <input type="checkbox" checked={f.enabled}
-                       disabled={f.enabled && enabledCount === 1}
-                       onChange={e => changeField(f.key, { enabled: e.target.checked })} />
-                사용
-              </label>
+              <div className="row" style={{ gap: 6 }}>
+                <label className="toggle">
+                  <input type="checkbox" checked={f.enabled}
+                         disabled={f.enabled && enabledCount === 1}
+                         onChange={e => changeField(f.key, { enabled: e.target.checked })} />
+                  사용
+                </label>
+                {f.enabled && (
+                  <button className="btn-danger" type="button"
+                          disabled={enabledCount === 1 || deletingKey === f.key}
+                          onClick={() => deleteField(f)}>
+                    {deletingKey === f.key ? "삭제 중…" : "항목 삭제"}
+                  </button>
+                )}
+              </div>
             </div>
             <label className="lab">항목 이름</label>
             <input className="inp" value={f.label} maxLength={40} disabled={!f.enabled}
@@ -829,6 +905,8 @@ function TeacherSettings({ schema, onSchemaChange }) {
           </div>
         ))}
       </div>
+      {deleteNote && <div className={deleteNote.startsWith("삭제 실패") ? "msg msg-bad" : "msg msg-ok"} style={{ marginTop: 12 }}>{deleteNote}</div>}
+      <div className="danger-note">수집 항목 삭제는 해당 항목의 기존 입력값도 함께 지웁니다. 최소 1개의 수집 항목은 항상 남겨 둡니다.</div>
 
       <div className="sharebox">
         <p>시트의 기본값을 바꾸면 주소에 별도 설정이 없는 기록장에 자동 반영됩니다. 아래 설정은 공유 링크에 담겨 특정 수업용으로 사용할 수 있습니다.</p>
@@ -850,6 +928,7 @@ function TeacherView({ schema, onSchemaChange }) {
   const [todoOnly, setTodoOnly] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+  const [deletingRow, setDeletingRow] = useState(null);
 
   async function enter() {
     setLoading(true); setErr("");
@@ -871,6 +950,23 @@ function TeacherView({ schema, onSchemaChange }) {
   const applySaved = useCallback((row, text) => {
     setRows(rs => rs.map(r => r.row === row ? { ...r, feedback: text } : r));
   }, []);
+
+  async function deleteRecord(rec) {
+    const label = `${rec.classCode} · ${rec.studentId} · ${rec.name}\n${recordTopic(rec)}\n${fmtDate(rec.timestamp)}`;
+    if (!window.confirm(`${label}\n\n이 제출 기록 1건을 삭제할까요?\n삭제한 기록은 웹앱에서 복구할 수 없습니다.`)) return;
+    setDeletingRow(rec.row); setErr("");
+    try {
+      const data = await apiPost({
+        action: "deleteRecord", pw, row: rec.row, timestamp: rec.timestamp,
+        classCode: rec.classCode, studentId: rec.studentId, name: rec.name
+      });
+      setRows(data.records || rows.filter(item => item.row !== rec.row));
+    } catch (e) {
+      setErr("기록 삭제 실패: " + e.message);
+    } finally {
+      setDeletingRow(null);
+    }
+  }
 
   const classes = useMemo(() => ["전체", ...Array.from(new Set(rows.map(r => r.classCode).filter(Boolean)))], [rows]);
   const shown = useMemo(() => {
@@ -898,7 +994,7 @@ function TeacherView({ schema, onSchemaChange }) {
 
   return (
     <div className="stack">
-      <TeacherSettings schema={schema} onSchemaChange={onSchemaChange} />
+      <TeacherSettings schema={schema} onSchemaChange={onSchemaChange} pw={pw} rows={rows} onRowsChanged={setRows} />
       <div className="card">
         <div className="rec-head">
           <div>
@@ -932,7 +1028,7 @@ function TeacherView({ schema, onSchemaChange }) {
         ) : (
           <div className="tablewrap">
             <table>
-              <thead><tr><th>제출시각</th><th>학급</th><th>학번</th><th>이름</th><th>주제</th><th>{schema.title}</th><th>피드백</th></tr></thead>
+              <thead><tr><th>제출시각</th><th>학급</th><th>학번</th><th>이름</th><th>주제</th><th>{schema.title}</th><th>피드백</th><th>삭제</th></tr></thead>
               <tbody>
                 {shown.map((r, i) => (
                   <tr key={r.row || i}>
@@ -946,6 +1042,11 @@ function TeacherView({ schema, onSchemaChange }) {
                       </div>
                     ))}</td>
                     <FeedbackCell rec={r} pw={pw} onSaved={applySaved} />
+                    <td>
+                      <button className="btn-danger" onClick={() => deleteRecord(r)} disabled={deletingRow === r.row}>
+                        {deletingRow === r.row ? "삭제 중…" : "기록 삭제"}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
